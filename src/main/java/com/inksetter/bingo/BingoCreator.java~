@@ -1,0 +1,163 @@
+package com.inksetter.bingo;
+
+import java.awt.Color;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
+
+public class BingoCreator {
+    
+    public static final float BOARD_WIDTH = 4.75f;
+    
+    private final PDDocument document;
+    private final PDFont textFont;
+    private final PDFont headingFont;
+    private final List<String> wordList;
+    private final float xOffset;
+    private final float yOffset;
+    private final float boxSize;
+
+    private final float headingSize;
+    private final float textSize;
+    private final float freeTextSize;
+    
+    private PDPageContentStream contentStream = null;
+    
+    private static final String WORD_LIST = "words.txt";
+    private static final String OUTPUT_FILE = "words.pdf";
+    private static final int BOARD_COUNT = 20;
+    
+    public static void main(String[] args) throws IOException {
+        BingoCreator creator = new BingoCreator(BOARD_WIDTH, new WordListReader(BingoCreator.class.getResourceAsStream("/"+ BingoCreator.WORD_LIST)).getWordList());
+        for (int i = 0; i < BOARD_COUNT; i++) {
+            creator.addBoard();
+        }
+        creator.saveAndClose(BingoCreator.OUTPUT_FILE);
+    }
+    
+    public BingoCreator(float boardWidth, List<String> wordList) throws IOException {
+        document = new PDDocument();
+        
+        float pageWidth = (8.5f * 72f);
+        float pageHeight = (11f * 72f);
+        
+        boxSize = (boardWidth * 72f) / 5f;
+        xOffset = (pageWidth - (boxSize * 5)) / 2;
+        yOffset = (pageHeight - (boxSize * 5) - boxSize / 2) / 2;
+        
+        // Create a new font object selecting one of the PDF base fonts
+        textFont = PDType0Font.load(document, BingoCreator.class.getResourceAsStream("/fonts/PRINC___.TTF"));
+        headingFont = PDType0Font.load(document, BingoCreator.class.getResourceAsStream("/fonts/COOPBL.TTF"));
+        this.wordList = wordList;
+        
+        // Discover Ideal Font Size
+        float maxWidth = 0f;
+        for (String word : wordList) {
+            float textWidth = textFont.getStringWidth(word) / 1000;
+            if (textWidth > maxWidth) maxWidth = textWidth;
+        }
+        
+        // Text and free space text are determined by box width
+        float idealSize = (boxSize - 6) / maxWidth; // More space (6) around text 
+        if (idealSize > (boxSize - 6)) idealSize = boxSize - 6; // Make sure it's not bigger than the height of the box
+        textSize = idealSize; 
+
+        freeTextSize = (boxSize - 4) / (headingFont.getStringWidth("FREE") / 1000); // Less space (4) around "FREE"
+        
+        // Heading is determined by box height.
+        headingSize = (boxSize/2 - 2);
+        
+        System.out.println("Font Size = [" + textSize + "/" + freeTextSize + "/" + headingSize +"]");
+    }
+    
+    public void saveAndClose(String name) throws IOException {
+        document.save(name);
+        document.close();
+    }
+    
+    private void addBoard() throws IOException {
+        // Start a new content stream which will "hold" the to be created content
+        PDPage page = new PDPage();
+        document.addPage( page );
+        contentStream = new PDPageContentStream(document, page);
+        
+        contentStream.setLineWidth(2.0f);
+        
+        contentStream.setStrokingColor(Color.BLACK);
+        contentStream.setNonStrokingColor(Color.BLACK);
+        
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                contentStream.addRect(xOffset + boxSize * i, yOffset + boxSize * j, boxSize, boxSize);
+            }
+        }
+        
+        for (int i = 0; i < 5; i++) {
+            contentStream.addRect(xOffset + boxSize * i, yOffset + boxSize * 5, boxSize, boxSize/2);
+        }
+        
+        contentStream.stroke();
+        
+        contentStream.setLineWidth(0.25f);
+        contentStream.addRect(xOffset - 9, yOffset - 9, boxSize * 5 + 18, boxSize * 5.5f + 18);
+        contentStream.stroke();
+        
+        // Draw the heading Text
+        drawTextInBox("B", 0, 5, headingFont, headingSize);
+        drawTextInBox("I", 1, 5, headingFont, headingSize);
+        drawTextInBox("N", 2, 5, headingFont, headingSize);
+        drawTextInBox("G", 3, 5, headingFont, headingSize);
+        drawTextInBox("O", 4, 5, headingFont, headingSize);
+        
+        List<String> words = new ArrayList<String>(wordList);
+        Collections.shuffle(words);
+        Iterator<String> wordIterator = words.iterator();
+        
+        for (int row = 0; row < 5; row++) {
+            for (int col = 0; col < 5; col++) {
+                if (row == 2 && col == 2) {
+                    // Fill in the free space first. White on black
+                    contentStream.setNonStrokingColor(Color.BLACK);
+                    contentStream.addRect(xOffset + boxSize * 2, yOffset + boxSize * 2, boxSize, boxSize);
+                    contentStream.fill();
+                    contentStream.setNonStrokingColor(Color.WHITE);
+                    drawTextInBox("FREE", 2, 2, headingFont, freeTextSize);
+                    
+                    contentStream.setNonStrokingColor(Color.BLACK);
+                }
+                else {
+                    drawTextInBox(wordIterator.next(), col, 4 - row, textFont, textSize);
+                }
+            }
+        }
+        
+        // Make sure that the content stream is closed:
+        contentStream.close();
+    }
+    
+    private void drawTextInBox(String text, int x, int y, PDFont font, float size) throws IOException {
+        boolean isTitle = (y > 4);
+        float boxHeight = isTitle ? boxSize / 2 : boxSize;
+
+        // Determine the width of the string, for centering purposes.
+        float textWidth = font.getStringWidth(text) / 1000 * size;
+        
+        // Create text in the middle of the box
+        contentStream.beginText();
+        contentStream.setFont(font, size);
+        contentStream.moveTextPositionByAmount(boxSize * x + xOffset + (boxSize/2 - textWidth/2), boxSize * y + yOffset + boxHeight/2 - size/3f);
+        
+        contentStream.appendRawCommands("2 Tr "); // fake bold.
+        contentStream.drawString(text);
+        contentStream.endText();
+        contentStream.addPolygon(new float[] {}, new float[] {});
+    }
+}
