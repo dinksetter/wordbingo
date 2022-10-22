@@ -47,4 +47,10 @@ public class WordListSource implements WordSource {
     public Collection<String> allWords() {
         return new HashSet<>(wordList);
     }
+
+    @Override
+    synchronized
+    public void reset() {
+        currentSpot = null;
+    }
 }

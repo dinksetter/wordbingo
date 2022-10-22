@@ -100,6 +100,7 @@ public class BoardCreator {
         contentStream.setLineWidth(2.0f);
         contentStream.setStrokingColor(Color.BLACK);
         contentStream.setNonStrokingColor(Color.BLACK);
+        words.reset();
 
         // Draw boxes for each square on the board
         for (int i = 0; i < boardCols; i++) {

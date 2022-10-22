@@ -5,4 +5,5 @@ import java.util.Collection;
 public interface WordSource {
     Collection<String> allWords();
     String nextWord();
+    void reset();
 }
