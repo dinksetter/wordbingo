@@ -34,6 +34,9 @@ public class GenerateBoard implements Runnable {
     @Option(names={"-o", "--output"}, description = "Output file")
     private String outputFile;
 
+    @Option(names = "--help", usageHelp = true, description = "display this help and exit")
+    boolean help;
+
     @Option(names={"-w", "--words"}, description = "Words to use (separated by whitespace)")
     private String wordList;
 
