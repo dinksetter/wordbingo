@@ -4,13 +4,11 @@ import java.io.IOException;
 import java.io.FileInputStream;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+@Command(name="wordbingo")
 public class GenerateBoard implements Runnable {
-    private static final int BOARD_COUNT = 8;
-
-    // Board Width in inches
-    public static final float BOARD_WIDTH = 4.75f;
 
     @Option(names={"-s", "--size"}, description = "Size of the board in inches")
     private float boardWidth = 4.75f;
@@ -24,18 +22,14 @@ public class GenerateBoard implements Runnable {
     @Option(names={"-f", "--file"}, description = "word file")
     private String wordFile;
 
-    @Option(names={"-h", "--header"}, description="headerText")
-    private String headerText = "BINGO";
+    @Option(names={"-h", "--header"}, description="Puzzle Heading (determines puzzle size) (default: ${DEFAULT-VALUE})", defaultValue = "BINGO")
+    private String headerText;
 
-
-    @Option(names={"-x", "--columns"}, description = "number of columns (and rows) for the puzzle")
-    private Integer columns;
-
-    @Option(names={"-o", "--output"}, description = "Output file")
+    @Option(names={"-o", "--output"}, description = "Output file (default: ${DEFAULT-VALUE})", defaultValue = "bingo.pdf")
     private String outputFile;
 
     @Option(names = "--help", usageHelp = true, description = "display this help and exit")
-    boolean help;
+    private boolean help;
 
     @Option(names={"-w", "--words"}, description = "Words to use (separated by whitespace)")
     private String wordList;
@@ -46,9 +40,11 @@ public class GenerateBoard implements Runnable {
     @Option(names={"-c", "--circle"}, description = "Add circles to each item")
     private boolean useCircle = false;
 
+    @Option(names={"-p", "--pages"}, description = "boards to generate")
+    private int boardCount = 8;
 
-    public static void main(String[] args) throws IOException {
-        CommandLine.run(new GenerateBoard(), args);
+    public static void main(String[] args)  {
+        new CommandLine(new GenerateBoard()).execute(args);
     }
 
     public void run() {
@@ -66,8 +62,11 @@ public class GenerateBoard implements Runnable {
             }
 
             BoardCreator creator = new BoardCreator(boardWidth, wordReader, !omitFreeSpace, twoUp, headerText, useCircle);
-            for (int i = 0; i < BOARD_COUNT; i++) {
+            for (int i = 0; i < boardCount; i++) {
                 creator.createBoard();
+            }
+            if (outputFile == null) {
+                outputFile = "bingo.pdf";
             }
             creator.saveAndClose(outputFile);
         } catch (IOException e) {
