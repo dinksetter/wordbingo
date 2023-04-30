@@ -152,9 +152,11 @@ public class BoardCreator {
         }
     }
 
-    private void drawTextInBox(PDPageContentStream contentStream, String text, int x, int y, PDFont font, float size, float yStart) throws IOException {
+    private void drawTextInBox(PDPageContentStream contentStream, String inText, int x, int y, PDFont font, float size, float yStart) throws IOException {
         boolean isTitle = (y > boardCols - 1);
         float boxHeight = isTitle ? boxSize / 2 : boxSize;
+
+        String text = inText.replace('_', ' ');
 
         // Determine the width of the string, for centering purposes.
         float textWidth = font.getStringWidth(text) / 1000 * size;
