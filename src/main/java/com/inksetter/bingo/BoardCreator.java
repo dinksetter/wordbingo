@@ -8,6 +8,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.graphics.state.RenderingMode;
 
 public class BoardCreator {
     
@@ -165,8 +166,7 @@ public class BoardCreator {
         contentStream.beginText();
         contentStream.setFont(font, size);
         contentStream.newLineAtOffset(boxSize * x + xOffset + (boxSize/2 - textWidth/2), boxSize * y + yOffset + yStart + boxHeight/2 - size/3f);
-        
-        contentStream.appendRawCommands("2 Tr "); // fake bold.
+        contentStream.setRenderingMode(RenderingMode.FILL_STROKE);
         contentStream.showText(text);
         contentStream.endText();
     }
