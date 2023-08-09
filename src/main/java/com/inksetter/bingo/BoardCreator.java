@@ -2,6 +2,7 @@ package com.inksetter.bingo;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -75,8 +76,8 @@ public class BoardCreator {
         System.out.println("Font Size = [" + textSize + "/" + freeTextSize + "/" + headingSize +"]");
     }
     
-    public void saveAndClose(String name) throws IOException {
-        document.save(name);
+    public void saveAndClose(OutputStream out) throws IOException {
+        document.save(out);
         document.close();
     }
     

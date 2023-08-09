@@ -1,7 +1,9 @@
 package com.inksetter.bingo;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.FileInputStream;
+import java.io.OutputStream;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -56,8 +58,7 @@ public class GenerateBoard implements Runnable {
                 wordReader = new WordListSource(new FileInputStream(wordFile));
             } else if (wordList != null) {
                 wordReader = new WordListSource(wordList);
-            }
-            else {
+            } else {
                 wordReader = new WordListSource(System.in);
             }
 
@@ -65,10 +66,9 @@ public class GenerateBoard implements Runnable {
             for (int i = 0; i < boardCount; i++) {
                 creator.createBoard();
             }
-            if (outputFile == null) {
-                outputFile = "bingo.pdf";
+            try (OutputStream output = new FileOutputStream(outputFile == null ? "bingo.pdf" : outputFile)) {
+                creator.saveAndClose(output);
             }
-            creator.saveAndClose(outputFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
